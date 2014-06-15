@@ -9,7 +9,8 @@
 #import "MovieViewController.h"
 #import "MovieCell.h"
 #import "UIImageView+AFNetworking.h"
-#import "MovieDetailViewController.h"
+//#import "MovieDetailViewController.h"
+#import "SingleMovieViewController.h"
 
 #define CELL_HEIGHT 110
 
@@ -99,7 +100,7 @@
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    MovieDetailViewController* md = [[MovieDetailViewController alloc] initWithMovieDetail: self.movies[indexPath.row]];
+    SingleMovieViewController* md = [[SingleMovieViewController alloc] initWithMovieDetail: self.movies[indexPath.row]];
     [self.navigationController pushViewController:md animated:YES];
 }
 
