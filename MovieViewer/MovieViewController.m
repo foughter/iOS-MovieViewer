@@ -9,8 +9,8 @@
 #import "MovieViewController.h"
 #import "MovieCell.h"
 #import "UIImageView+AFNetworking.h"
-//#import "MovieDetailViewController.h"
 #import "SingleMovieViewController.h"
+#import "CustomPullToRefresh.h"
 
 #define CELL_HEIGHT 110
 
@@ -18,6 +18,8 @@
 @property (weak, nonatomic) IBOutlet UITableView *tableView;
 
 @property (nonatomic, strong) NSArray* movies;
+@property (nonatomic, strong) UILabel* loadingLabel;
+@property (nonatomic, strong) CustomPullToRefresh* ptr;
 
 @end
 
@@ -43,18 +45,19 @@
     self.tableView.delegate = self;
     self.tableView.rowHeight = CELL_HEIGHT;
     
-    NSString *url = @"http://api.rottentomatoes.com/api/public/v1.0/lists/dvds/top_rentals.json?apikey=g9au4hv6khv6wzvzgt55gpqs";
+    self.loadingLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, self.view.frame.size.width, 60)] ;
+    self.loadingLabel.backgroundColor = [UIColor clearColor];
+    self.loadingLabel.textColor = [UIColor lightGrayColor];
+    self.loadingLabel.textAlignment = UITextAlignmentCenter;
+    self.loadingLabel.font = [UIFont fontWithName:@"Champagne&Limousines-Bold" size:18];
+    self.loadingLabel.text = @"Pull to refresh";
+    self.tableView.tableHeaderView = self.loadingLabel;
     
-    NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:url]];
-    [NSURLConnection sendAsynchronousRequest:request queue:[NSOperationQueue mainQueue] completionHandler:^(NSURLResponse *response, NSData *data, NSError *connectionError) {
-        id object = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
-        
-        self.movies = object[@"movies"];
-        NSLog(@"num of movies: %d", self.movies.count);
-        NSLog(@"%@", self.movies[0]);
-        
-        [self.tableView reloadData];
-    }];
+    self.ptr = [[CustomPullToRefresh alloc] initWithScrollView:self.tableView delegate:self];
+
+    self.loadingLabel.text = @"Loading ...";
+    
+    [self refresh];
 }
 
 - (void)didReceiveMemoryWarning
@@ -102,6 +105,39 @@
 {
     SingleMovieViewController* md = [[SingleMovieViewController alloc] initWithMovieDetail: self.movies[indexPath.row]];
     [self.navigationController pushViewController:md animated:YES];
+}
+
+-(void) refresh
+{
+    NSString *url = @"http://api.rottentomatoes.com/api/public/v1.0/lists/dvds/top_rentals.json?apikey=g9au4hv6khv6wzvzgt55gpqs";
+
+    NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:url]];
+    [NSURLConnection sendAsynchronousRequest:request queue:[NSOperationQueue mainQueue] completionHandler:^(NSURLResponse *response, NSData *data, NSError *connectionError) {
+        id object = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
+    
+        self.movies = object[@"movies"];
+        NSLog(@"num of movies: %d", self.movies.count);
+        NSLog(@"%@", self.movies[0]);
+    
+        [self.ptr performSelectorOnMainThread:@selector(endRefresh) withObject:nil waitUntilDone:NO];
+    
+        [self.tableView reloadData];
+    }];
+}
+
+#pragma mark - CustomPullToRefresh Delegate Methods
+- (void) customPullToRefreshShouldRefresh:(CustomPullToRefresh *)ptr
+{
+    self.loadingLabel.text = @"Loading ...";
+    [self performSelectorInBackground:@selector(refresh) withObject:nil];
+}
+
+- (void) customPullToRefreshEngageRefresh:(CustomPullToRefresh *)ptr {
+    self.loadingLabel.text = @"Release to refresh";
+}
+
+- (void) customPullToRefreshDisengaged:(CustomPullToRefresh *)ptr {
+    self.loadingLabel.text = @"Pull to refresh";
 }
 
 @end

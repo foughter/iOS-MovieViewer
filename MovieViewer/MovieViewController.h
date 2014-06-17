@@ -7,7 +7,8 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "CustomPullToRefresh.h"
 
-@interface MovieViewController : UIViewController
+@interface MovieViewController : UIViewController<UITableViewDataSource, UITableViewDelegate, CustomPullToRefreshDelegate>
 
 @end
